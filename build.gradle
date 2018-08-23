@@ -5,7 +5,7 @@ buildscript {
 }
 
 plugins {
-    id("org.jetbrains.intellij") version "0.3.0"
+    id("org.jetbrains.intellij") version "0.3.7"
     id("org.jetbrains.kotlin.jvm") version "1.2.51"
 }
 
@@ -14,11 +14,12 @@ apply plugin: "kotlin"
 
 intellij {
     version '2018.1.6'
-    pluginName 'MyExample'
+    pluginName 'CFRDecompiler'
+    updateSinceUntilBuild false
 }
 
-group 'idv.freddie.plugin.example'
-version '0.0.1'
+group 'idv.freddie.plugin'
+version '0.1.0'
 
 repositories {
     mavenCentral()
