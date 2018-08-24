@@ -2,7 +2,6 @@
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
-import com.intellij.icons.AllIcons
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
@@ -11,9 +10,6 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFile
-import com.intellij.psi.search.FilenameIndex
-import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -26,6 +22,8 @@ import java.nio.charset.Charset
 class DecompilerAction : AnAction() {
 
     private val sourceRegex = Regex("\\.(kt|java)\$", RegexOption.IGNORE_CASE)
+
+    private var possibleClassRoots: List<File> = EMPTY_FILE_LIST
 
     override fun actionPerformed(actionEvent: AnActionEvent) {
         val editor = actionEvent.getData(LangDataKeys.EDITOR)
@@ -55,7 +53,7 @@ class DecompilerAction : AnAction() {
             val output = ExecUtil.execAndGetOutput(createCommandLine(basePath, execPath, classFilePath))
             if (output.exitCode == 0) {
                 makeSureDecompileRootPath(basePath)
-                val outputFilePath = "${getDecompilePath(basePath)}/${createDecompliedFileName(targetClassFile?.name ?: "")}"
+                val outputFilePath = "${getDecompilePath(basePath)}/${createDecompiledFileName(targetClassFile?.name ?: "")}"
                 writeDecompileResult(outputFilePath, output, project)
             }
         }
@@ -79,7 +77,8 @@ class DecompilerAction : AnAction() {
         super.update(actionEvent)
         val currentDoc = actionEvent.getData(LangDataKeys.EDITOR)?.document
         val project = actionEvent.project
-        actionEvent.presentation.isVisible =
+
+        actionEvent.presentation.isEnabledAndVisible =
                 project != null
                 && currentDoc != null
                 && getVirtualClassFile(currentDoc, project) != null
@@ -98,7 +97,7 @@ class DecompilerAction : AnAction() {
         }
     }
 
-    private fun createDecompliedFileName(originalName: String): String =
+    private fun createDecompiledFileName(originalName: String): String =
         if (originalName.endsWith(EXTENTION_NAME_CLASS)) {
             originalName.replace(EXTENTION_NAME_CLASS, EXTENTION_NAME_JAVA)
         } else originalName
@@ -117,22 +116,37 @@ class DecompilerAction : AnAction() {
 
     private fun getVirtualClassFile(currentDoc: Document, project: Project): VirtualFile? {
         val currentSrc = FileDocumentManager.getInstance().getFile(currentDoc)
-        var targetFiles = emptyArray<PsiFile>()
         currentSrc?.let {
             val currentClassFileName = sourceRegex.replace(it.name, EXTENTION_NAME_CLASS)
             if (!currentClassFileName.endsWith(EXTENTION_NAME_CLASS)) {
                 return@let
             }
-            targetFiles = FilenameIndex.getFilesByName(project,
-                    currentClassFileName, GlobalSearchScope.projectScope(project))
+
+            if (possibleClassRoots.isEmpty()) {
+                possibleClassRoots = project.basePath?.let {
+                    File(it).walkTopDown()
+                            .filter { it.isDirectory && (it.name == "build" || it.name == "out") }
+                            .toList()
+                } ?: EMPTY_FILE_LIST
+            }
+
+            possibleClassRoots.forEach {
+                it.walkTopDown().find { it.name == currentClassFileName }?.run {
+                    val targetFile = LocalFileSystem.getInstance().findFileByIoFile(this)
+                    if (targetFile == null) {
+                        possibleClassRoots = EMPTY_FILE_LIST
+                    }
+                    return targetFile
+                }
+            }
         }
-        return if (targetFiles.isNotEmpty()) {
-            targetFiles[0].virtualFile
-        } else null
+
+        return null
     }
 
     companion object {
         private const val EXTENTION_NAME_CLASS = ".class"
         private const val EXTENTION_NAME_JAVA = ".java"
+        private val EMPTY_FILE_LIST = emptyList<File>()
     }
 }
