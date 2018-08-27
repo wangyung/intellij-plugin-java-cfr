@@ -1,3 +1,5 @@
+package idv.freddie.intellij.plugin;
+
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextBrowseFolderListener;

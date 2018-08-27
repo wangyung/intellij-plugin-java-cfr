@@ -1,3 +1,4 @@
+package idv.freddie.intellij.plugin
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessOutput
