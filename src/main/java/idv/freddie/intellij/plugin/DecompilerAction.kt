@@ -19,7 +19,6 @@ import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
 
-
 class DecompilerAction : AnAction() {
 
     private val sourceRegex = Regex("\\.(kt|java)\$", RegexOption.IGNORE_CASE)
@@ -126,13 +125,15 @@ class DecompilerAction : AnAction() {
             if (possibleClassRoots.isEmpty()) {
                 possibleClassRoots = project.basePath?.let {
                     File(it).walkTopDown()
-                            .filter { it.isDirectory && (it.name == "build" || it.name == "out") }
+                            .filter { file -> file.isDirectory && (file.name == "build" || file.name == "out") }
                             .toList()
                 } ?: EMPTY_FILE_LIST
             }
 
-            possibleClassRoots.forEach {
-                it.walkTopDown().find { it.name == currentClassFileName }?.run {
+            possibleClassRoots.forEach { file ->
+                file.walkTopDown().find { classFile ->
+                    compareClassFileName(classFile.name, currentClassFileName)
+                }?.run {
                     val targetFile = LocalFileSystem.getInstance().findFileByIoFile(this)
                     if (targetFile == null) {
                         possibleClassRoots = EMPTY_FILE_LIST
@@ -143,6 +144,19 @@ class DecompilerAction : AnAction() {
         }
 
         return null
+    }
+
+    private fun compareClassFileName(srcFilename: String, expectedClassFilename: String): Boolean {
+        //compare Filename.class and FilenameKt.class
+        val srcNames = srcFilename.split(".")
+        val expectedNames = expectedClassFilename.split(".")
+        if (srcNames.size != 2 || srcNames.size != 2) {
+            return false
+        }
+        if (srcNames[1] == "class") {
+            return (srcNames[0] == expectedNames[0] || srcNames[0] == expectedNames[0] + "Kt")
+        }
+        return false
     }
 
     companion object {
