@@ -98,7 +98,7 @@ class DecompilerAction : AnAction() {
                 it.writeText(output.stdout, Charsets.UTF_8)
             }
 
-            LocalFileSystem.getInstance().findFileByIoFile(tempFile)?.let {
+            LocalFileSystem.getInstance().refreshAndFindFileByIoFile(tempFile)?.let {
                 ApplicationManager.getApplication().invokeLater {
                     FileEditorManager.getInstance(project).openFile(it, true)
                 }
@@ -169,7 +169,7 @@ class DecompilerAction : AnAction() {
                 file.walkTopDown().find { classFile ->
                     compareClassFileName(classFile.name, currentClassFileName)
                 }?.run {
-                    val targetFile = LocalFileSystem.getInstance().findFileByIoFile(this)
+                    val targetFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(this)
                     if (targetFile == null) {
                         possibleClassRoots = EMPTY_FILE_LIST
                     }

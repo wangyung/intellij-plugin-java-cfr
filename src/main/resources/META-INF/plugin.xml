@@ -29,7 +29,7 @@
   </extensions>
 
   <actions>
-    <action class="idv.freddie.intellij.plugin.DecompilerAction" id="freddie.cfr.decompile" text="Decompile class" description="Test">
+    <action class="idv.freddie.intellij.plugin.DecompilerAction" id="freddie.cfr.decompile" text="Decompile class" description="Decompile the class file to java">
       <add-to-group group-id="CodeMenu" relative-to-action="ConvertJavaFileToKotlin" anchor="after"/>
     </action>
   </actions>
