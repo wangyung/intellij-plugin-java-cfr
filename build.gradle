@@ -19,7 +19,7 @@ intellij {
 }
 
 group 'idv.freddie.plugin'
-version '0.2.2'
+version '0.2.3'
 
 repositories {
     mavenCentral()

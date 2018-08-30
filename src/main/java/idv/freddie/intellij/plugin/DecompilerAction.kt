@@ -32,6 +32,8 @@ class DecompilerAction : AnAction() {
 
     private val windowManager: WindowManager = WindowManager.getInstance()
 
+    private var currentProjectName: String = ""
+
     private val logger: Logger = Logger.getInstance("CFRDecompiler")
 
     override fun actionPerformed(actionEvent: AnActionEvent) {
@@ -151,15 +153,20 @@ class DecompilerAction : AnAction() {
 
     private fun getVirtualClassFile(currentDoc: Document, project: Project): VirtualFile? {
         val currentSrc = FileDocumentManager.getInstance().getFile(currentDoc)
-        currentSrc?.let {
-            val currentClassFileName = sourceRegex.replace(it.name, EXTENTION_NAME_CLASS)
+        currentSrc?.let {srcFile ->
+            val currentClassFileName = sourceRegex.replace(srcFile.name, EXTENTION_NAME_CLASS)
             if (!currentClassFileName.endsWith(EXTENTION_NAME_CLASS)) {
                 return@let
             }
 
+            if (project.name != currentProjectName) {
+                possibleClassRoots = EMPTY_FILE_LIST
+                currentProjectName = project.name
+            }
+
             if (possibleClassRoots.isEmpty()) {
-                possibleClassRoots = project.basePath?.let {
-                    File(it).walkTopDown()
+                possibleClassRoots = project.basePath?.let { basePath ->
+                    File(basePath).walkTopDown()
                             .filter { file -> file.isDirectory && (file.name == "build" || file.name == "out") }
                             .toList()
                 } ?: EMPTY_FILE_LIST
