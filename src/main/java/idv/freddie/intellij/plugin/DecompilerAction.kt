@@ -4,9 +4,13 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -15,6 +19,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
 import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
@@ -25,38 +30,66 @@ class DecompilerAction : AnAction() {
 
     private var possibleClassRoots: List<File> = EMPTY_FILE_LIST
 
+    private val windowManager: WindowManager = WindowManager.getInstance()
+
+    private val logger: Logger = Logger.getInstance("CFRDecompiler")
+
     override fun actionPerformed(actionEvent: AnActionEvent) {
         val editor = actionEvent.getData(LangDataKeys.EDITOR)
         val currentDoc = editor?.document
         val project = actionEvent.dataContext.getData(DataKeys.PROJECT.name) as? Project
         if (currentDoc == null || project == null) {
+            logger.error(Messages.NO_DOCUMENT_OR_PROJECT)
             return
         }
 
         val targetClassFile = getVirtualClassFile(currentDoc, project)
-        val projectSdk = ProjectRootManager.getInstance(project).projectSdk
+        val javaExePath = getJavaExePath(project)
 
-        if (projectSdk is ProjectJdkImpl) {
-            val basePath = project.basePath
-            val execPath = projectSdk.javaExecPath
-            if (basePath == null || execPath == null) {
-                println("The exec path is incorrect.")
-                return
-            }
+        val basePath = project.basePath
+        if (basePath == null || javaExePath.isNullOrEmpty()) {
+            outputError(Messages.INCORRECT_JAVA_PATH, project)
+            return
+        }
 
-            val classFilePath = targetClassFile?.path ?: ""
-            if (classFilePath.isEmpty()) {
-                println("No target class file")
-                return
-            }
+        val classFilePath = targetClassFile?.path ?: ""
+        if (classFilePath.isEmpty()) {
+            outputError(Messages.NO_CLASS_FILE, project)
+            return
+        }
 
-            val output = ExecUtil.execAndGetOutput(createCommandLine(basePath, execPath, classFilePath))
+        createCommandLine(basePath, javaExePath!!, classFilePath)?.let {
+            val output = ExecUtil.execAndGetOutput(it)
             if (output.exitCode == 0) {
                 makeSureDecompileRootPath(basePath)
                 val outputFilePath = "${getDecompilePath(basePath)}/${createDecompiledFileName(targetClassFile?.name ?: "")}"
                 writeDecompileResult(outputFilePath, output, project)
+            } else {
+                outputError(output.stderr, project)
+            }
+        } ?: run { outputError(Messages.NO_CLASS_FILE, project) }
+    }
+
+    private fun outputError(message: String, project: Project) {
+        val statusBar = windowManager.getStatusBar(project)
+        Notifications.Bus.notify(Notification("CFRCompiler", "error", message, NotificationType.ERROR))
+        logger.warn(message)
+        statusBar.info = Messages.ERROR
+    }
+
+    private fun getJavaExePath(project: Project): String? {
+        var javaExePath: String? = null
+        val projectSdk = ProjectRootManager.getInstance(project).projectSdk
+        if (projectSdk is ProjectJdkImpl) {
+            javaExePath = projectSdk.javaExecPath
+        } else {
+            if (isMac()) {
+                javaExePath = System.getenv("JAVA_HOME")?.let { javaHome ->
+                    "$javaHome/bin/java"
+                }
             }
         }
+        return javaExePath
     }
 
     private fun writeDecompileResult(outputFilePath: String, output: ProcessOutput, project: Project) {
@@ -102,10 +135,12 @@ class DecompilerAction : AnAction() {
             originalName.replace(EXTENTION_NAME_CLASS, EXTENTION_NAME_JAVA)
         } else originalName
 
-    private fun createCommandLine(basePath: String, exePath: String, targetPath: String): GeneralCommandLine {
+    private fun createCommandLine(basePath: String, javaExePath: String, targetPath: String): GeneralCommandLine? {
         val decompilerPath = PropertiesComponent.getInstance()
                 .getValue(DecompilerConfigurable.KEY_DECOMPILER_PATH)
-        return GeneralCommandLine(listOf(exePath, "-jar", decompilerPath, targetPath)).apply {
+        return if (decompilerPath == null) {
+            null
+        } else GeneralCommandLine(listOf(javaExePath, "-jar", decompilerPath, targetPath)).apply {
             charset = Charset.forName("UTF-8")
             workDirectory = File(basePath)
         }
