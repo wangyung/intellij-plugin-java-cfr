@@ -102,7 +102,7 @@ class DecompilerAction : AnAction() {
                 ApplicationManager.getApplication().invokeLater {
                     FileEditorManager.getInstance(project).openFile(it, true)
                 }
-            }
+            } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR, project) }
         }
     }
 
