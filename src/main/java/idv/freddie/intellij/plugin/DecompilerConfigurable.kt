@@ -6,20 +6,20 @@ import javax.swing.JComponent
 
 class DecompilerConfigurable : Configurable {
 
-    private val configuration: DecompilerConfiguration = DecompilerConfiguration()
+    private val configurationModel: DecompilerConfigurableModel = DecompilerConfigurableModel()
 
-    override fun isModified(): Boolean = configuration.isSettingChanged
+    override fun isModified(): Boolean = configurationModel.settingChanged
 
     override fun getDisplayName(): String = "Java CFR Decompiler"
 
     override fun apply() {
-        configuration.save()
+        configurationModel.save()
     }
 
     override fun createComponent(): JComponent? {
-        configuration.decompilerPath = PropertiesComponent.getInstance()
+        configurationModel.decompilerPath = PropertiesComponent.getInstance()
                 .getValue(KEY_DECOMPILER_PATH, "")
-        return configuration.`$$$getRootComponent$$$`()
+        return configurationModel.rootView
     }
 
     companion object {
