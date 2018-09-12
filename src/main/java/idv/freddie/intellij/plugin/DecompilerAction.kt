@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -45,7 +46,12 @@ class DecompilerAction : AnAction() {
             return
         }
 
-        val targetClassFile = getVirtualClassFile(currentDoc, project)
+        var targetClassFile = getVirtualClassFile(currentDoc, project)
+        if (targetClassFile == null) {
+            val selectedText = editor.selectionModel.selectedText ?: ""
+            targetClassFile = getVirtualClassFile(selectedText, project)
+        }
+
         val javaExePath = getJavaExePath(project)
 
         val basePath = project.basePath
@@ -69,7 +75,7 @@ class DecompilerAction : AnAction() {
             } else {
                 outputError(output.stderr, project)
             }
-        } ?: run { outputError(Messages.NO_CLASS_FILE, project) }
+        } ?: run { outputError(Messages.CANT_CREATE_DECOMPILER, project) }
     }
 
     private fun outputError(message: String, project: Project) {
@@ -110,13 +116,20 @@ class DecompilerAction : AnAction() {
 
     override fun update(actionEvent: AnActionEvent) {
         super.update(actionEvent)
-        val currentDoc = actionEvent.getData(LangDataKeys.EDITOR)?.document
+        val editor = actionEvent.getData(LangDataKeys.EDITOR)
+        val currentDoc = editor?.document
         val project = actionEvent.project
 
         actionEvent.presentation.isEnabledAndVisible =
                 project != null
                 && currentDoc != null
-                && getVirtualClassFile(currentDoc, project) != null
+                && isShowAction(project, editor, currentDoc)
+    }
+
+    private fun isShowAction(project: Project, editor: Editor, currentDoc: Document): Boolean {
+        return getVirtualClassFile(currentDoc, project) != null
+                || (!editor.selectionModel.selectedText.isNullOrEmpty()
+                && getVirtualClassFile(editor.selectionModel.selectedText!!, project) != null)
     }
 
     private fun getDecompilePath(basePath: String): String = "$basePath/build/decompile"
@@ -153,35 +166,44 @@ class DecompilerAction : AnAction() {
 
     private fun getVirtualClassFile(currentDoc: Document, project: Project): VirtualFile? {
         val currentSrc = FileDocumentManager.getInstance().getFile(currentDoc)
-        currentSrc?.let {srcFile ->
+        currentSrc?.let { srcFile ->
             val currentClassFileName = sourceRegex.replace(srcFile.name, EXTENTION_NAME_CLASS)
             if (!currentClassFileName.endsWith(EXTENTION_NAME_CLASS)) {
                 return@let
             }
 
-            if (project.name != currentProjectName) {
-                possibleClassRoots = EMPTY_FILE_LIST
-                currentProjectName = project.name
-            }
+            return findVirtualFile(currentClassFileName, project)
+        }
 
-            if (possibleClassRoots.isEmpty()) {
-                possibleClassRoots = project.basePath?.let { basePath ->
-                    File(basePath).walkTopDown()
-                            .filter { file -> file.isDirectory && (file.name == "build" || file.name == "out") }
-                            .toList()
-                } ?: EMPTY_FILE_LIST
-            }
+        return null
+    }
 
-            possibleClassRoots.forEach { file ->
-                file.walkTopDown().find { classFile ->
-                    compareClassFileName(classFile.name, currentClassFileName)
-                }?.run {
-                    val targetFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(this)
-                    if (targetFile == null) {
-                        possibleClassRoots = EMPTY_FILE_LIST
-                    }
-                    return targetFile
+    private fun getVirtualClassFile(selectedText: String, project: Project): VirtualFile? =
+        findVirtualFile(selectedText + EXTENTION_NAME_CLASS, project)
+
+    private fun findVirtualFile(classFileName: String, project: Project): VirtualFile? {
+        if (project.name != currentProjectName) {
+            possibleClassRoots = EMPTY_FILE_LIST
+            currentProjectName = project.name
+        }
+
+        if (possibleClassRoots.isEmpty()) {
+            possibleClassRoots = project.basePath?.let { basePath ->
+                File(basePath).walkTopDown()
+                        .filter { file -> file.isDirectory && (file.name == "build" || file.name == "out") }
+                        .toList()
+            } ?: EMPTY_FILE_LIST
+        }
+
+        possibleClassRoots.forEach { file ->
+            file.walkTopDown().find { classFile ->
+                compareClassFileName(classFile.name, classFileName)
+            }?.run {
+                val targetFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(this)
+                if (targetFile == null) {
+                    possibleClassRoots = EMPTY_FILE_LIST
                 }
+                return targetFile
             }
         }
 
