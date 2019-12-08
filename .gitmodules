@@ -1,0 +1,3 @@
+[submodule "cfr-decompiler/cfr"]
+	path = cfr-decompiler/cfr
+	url = git@github.com:leibnitz27/cfr.git
