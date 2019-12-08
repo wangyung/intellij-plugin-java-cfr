@@ -1,8 +1,13 @@
 plugins {
     id("org.jetbrains.intellij") version "0.4.14"
+    id("org.jetbrains.kotlin.jvm") version "1.3.61"
 }
 
 apply plugin: 'org.jetbrains.intellij'
+apply plugin: "kotlin"
+
+group 'idv.freddie.plugin'
+version '0.5.0'
 
 intellij {
     version '2018.1.6'
@@ -10,6 +15,11 @@ intellij {
     updateSinceUntilBuild false
 }
 
-group 'idv.freddie.plugin'
-version '0.3.0'
+dependencies {
+    implementation project(':cfr-decompiler')
+}
+
+repositories {
+    mavenCentral()
+}
 

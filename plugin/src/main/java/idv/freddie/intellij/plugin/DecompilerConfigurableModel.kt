@@ -10,7 +10,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.JLabel
 
-
 class DecompilerConfigurableModel {
 
     var decompilerPath: String

@@ -2,7 +2,6 @@ package idv.freddie.intellij.plugin
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessOutput
-import com.intellij.execution.util.ExecUtil
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
@@ -24,6 +23,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
+import org.benf.cfr.reader.api.CfrDriver
 import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
@@ -69,16 +69,20 @@ class DecompilerAction : AnAction() {
             return
         }
 
-        createCommandLine(basePath, javaExePath!!, classFilePath)?.let {
-            val output = ExecUtil.execAndGetOutput(it)
-            if (output.exitCode == 0) {
-                makeSureDecompileRootPath(basePath)
-                val outputFilePath = "${getDecompilePath(basePath)}/${createDecompiledFileName(targetClassFile?.name ?: "")}"
-                writeDecompileResult(outputFilePath, output, project)
-            } else {
-                outputError(output.stderr, project)
-            }
-        } ?: run { outputError(Messages.CANT_CREATE_DECOMPILER, project) }
+        // TODO: Support options in the future
+        val cfrDriver: CfrDriver = CfrDriver.Builder().build()
+        cfrDriver.analyse(listOf(classFilePath))
+
+//        createCommandLine(basePath, javaExePath!!, classFilePath)?.let {
+//            val output = ExecUtil.execAndGetOutput(it)
+//            if (output.exitCode == 0) {
+//                makeSureDecompileRootPath(basePath)
+//                val outputFilePath = "${getDecompilePath(basePath)}/${createDecompiledFileName(targetClassFile?.name ?: "")}"
+//                writeDecompileResult(outputFilePath, output, project)
+//            } else {
+//                outputError(output.stderr, project)
+//            }
+//        } ?: run { outputError(Messages.CANT_CREATE_DECOMPILER, project) }
     }
 
     private fun outputError(message: String, project: Project) {

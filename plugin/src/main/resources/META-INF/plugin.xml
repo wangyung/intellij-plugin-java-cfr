@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>idv.freddie.plugin.decompiler</id>
   <name>CFRDecompiler</name>
-  <version>1.0</version>
+  <version>0.5.0</version>
   <vendor email="wangyung@gamil.com" url="https://twitter.com/wangyung">Freddie Wang</vendor>
 
   <description><![CDATA[
