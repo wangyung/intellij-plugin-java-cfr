@@ -1,0 +1,2 @@
+rootProject.name = 'cfr-decompiler-plugin'
+include 'plugin'

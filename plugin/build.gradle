@@ -1,0 +1,15 @@
+plugins {
+    id("org.jetbrains.intellij") version "0.4.14"
+}
+
+apply plugin: 'org.jetbrains.intellij'
+
+intellij {
+    version '2018.1.6'
+    pluginName 'CFRDecompiler'
+    updateSinceUntilBuild false
+}
+
+group 'idv.freddie.plugin'
+version '0.3.0'
+
