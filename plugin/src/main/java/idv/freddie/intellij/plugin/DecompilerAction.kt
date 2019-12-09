@@ -25,7 +25,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import org.benf.cfr.reader.api.CfrDriver
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+import java.io.PrintStream
 import java.nio.charset.Charset
 
 class DecompilerAction : AnAction() {
@@ -69,20 +71,27 @@ class DecompilerAction : AnAction() {
             return
         }
 
+        val decompileOutputDirectory = getDecompilePath(basePath)
+        val decompileFileName = createDecompiledFileName(targetClassFile?.name ?: "")
+        val outputFilePath = "$decompileOutputDirectory/$decompileFileName"
+
+        makeSureDirectoryExist(decompileOutputDirectory)
+
+        // TODO: Remove the stdout redirection after options is supported.
+        val prevPrintStream = System.out
+        val outputFile = File(outputFilePath)
+        val fileOutputStream = FileOutputStream(outputFile)
+        System.setOut(PrintStream(fileOutputStream))
         // TODO: Support options in the future
         val cfrDriver: CfrDriver = CfrDriver.Builder().build()
         cfrDriver.analyse(listOf(classFilePath))
+        System.setOut(prevPrintStream)
 
-//        createCommandLine(basePath, javaExePath!!, classFilePath)?.let {
-//            val output = ExecUtil.execAndGetOutput(it)
-//            if (output.exitCode == 0) {
-//                makeSureDecompileRootPath(basePath)
-//                val outputFilePath = "${getDecompilePath(basePath)}/${createDecompiledFileName(targetClassFile?.name ?: "")}"
-//                writeDecompileResult(outputFilePath, output, project)
-//            } else {
-//                outputError(output.stderr, project)
-//            }
-//        } ?: run { outputError(Messages.CANT_CREATE_DECOMPILER, project) }
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(outputFile)?.let {
+            ApplicationManager.getApplication().invokeLater {
+                FileEditorManager.getInstance(project).openFile(it, true)
+            }
+        } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR, project) }
     }
 
     private fun outputError(message: String, project: Project) {
@@ -107,20 +116,6 @@ class DecompilerAction : AnAction() {
         return javaExePath
     }
 
-    private fun writeDecompileResult(outputFilePath: String, output: ProcessOutput, project: Project) {
-        WriteAction.run<IOException> {
-            val tempFile = File(outputFilePath).also {
-                it.writeText(output.stdout, Charsets.UTF_8)
-            }
-
-            LocalFileSystem.getInstance().refreshAndFindFileByIoFile(tempFile)?.let {
-                ApplicationManager.getApplication().invokeLater {
-                    FileEditorManager.getInstance(project).openFile(it, true)
-                }
-            } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR, project) }
-        }
-    }
-
     override fun update(actionEvent: AnActionEvent) {
         super.update(actionEvent)
         val editor = actionEvent.getData(LangDataKeys.EDITOR)
@@ -141,14 +136,14 @@ class DecompilerAction : AnAction() {
 
     private fun getDecompilePath(basePath: String): String = "$basePath/build/decompile"
 
-    private fun makeSureDecompileRootPath(basePath: String) {
-        val rootPath = File(getDecompilePath(basePath))
-        if (rootPath.isFile && rootPath.exists()) {
-            rootPath.delete()
+    private fun makeSureDirectoryExist(targetPath: String) {
+        val targetFile = File(targetPath)
+        if (targetFile.isFile && targetFile.exists()) {
+            targetFile.delete()
         }
 
-        if (!rootPath.exists()) {
-            rootPath.mkdirs()
+        if (!targetFile.exists()) {
+            targetFile.mkdirs()
         }
     }
 
@@ -157,6 +152,7 @@ class DecompilerAction : AnAction() {
             originalName.replace(EXTENTION_NAME_CLASS, EXTENTION_NAME_JAVA)
         } else originalName
 
+    // Standalone decompiler jar is deprecated.
     private fun createCommandLine(basePath: String, javaExePath: String, targetPath: String): GeneralCommandLine? {
         val decompilerPath = PropertiesComponent.getInstance()
                 .getValue(DecompilerConfigurable.KEY_DECOMPILER_PATH)
@@ -165,6 +161,20 @@ class DecompilerAction : AnAction() {
         } else GeneralCommandLine(listOf(javaExePath, "-jar", decompilerPath, targetPath)).apply {
             charset = Charset.forName("UTF-8")
             workDirectory = File(basePath)
+        }
+    }
+
+    private fun writeDecompileResult(outputFilePath: String, output: ProcessOutput, project: Project) {
+        WriteAction.run<IOException> {
+            val tempFile = File(outputFilePath).also {
+                it.writeText(output.stdout, Charsets.UTF_8)
+            }
+
+            LocalFileSystem.getInstance().refreshAndFindFileByIoFile(tempFile)?.let {
+                ApplicationManager.getApplication().invokeLater {
+                    FileEditorManager.getInstance(project).openFile(it, true)
+                }
+            } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR, project) }
         }
     }
 
