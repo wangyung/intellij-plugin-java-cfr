@@ -23,6 +23,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
+import idv.freddie.intellij.plugin.configuration.DecompilerConfigurable
 import org.benf.cfr.reader.api.CfrDriver
 import java.io.File
 import java.io.FileOutputStream
@@ -96,9 +97,16 @@ class DecompilerAction : AnAction() {
 
     private fun outputError(message: String, project: Project) {
         val statusBar = windowManager.getStatusBar(project)
-        Notifications.Bus.notify(Notification("CFRCompiler", "error", message, NotificationType.ERROR))
+        Notifications.Bus.notify(
+            Notification(
+                "CFRDecompiler",
+                "error",
+                "[Decompiler] $message",
+                NotificationType.ERROR
+            )
+        )
         logger.warn(message)
-        statusBar.info = Messages.ERROR
+        statusBar.info = Messages.UNKNOWN_ERROR
     }
 
     private fun getJavaExePath(project: Project): String? {
@@ -123,11 +131,12 @@ class DecompilerAction : AnAction() {
         val project = actionEvent.project
 
         actionEvent.presentation.isEnabledAndVisible =
-                project != null
-                && currentDoc != null
-                && isShowAction(project, editor, currentDoc)
+            project != null
+                    && currentDoc != null
+        // && isShowAction(project, editor, currentDoc)
     }
 
+    // Don't need to use this method to determine isEnabledAndVisible
     private fun isShowAction(project: Project, editor: Editor, currentDoc: Document): Boolean {
         return getVirtualClassFile(currentDoc, project) != null
                 || (!editor.selectionModel.selectedText.isNullOrEmpty()
@@ -148,14 +157,14 @@ class DecompilerAction : AnAction() {
     }
 
     private fun createDecompiledFileName(originalName: String): String =
-        if (originalName.endsWith(EXTENTION_NAME_CLASS)) {
-            originalName.replace(EXTENTION_NAME_CLASS, EXTENTION_NAME_JAVA)
+        if (originalName.endsWith(EXTENSION_NAME_CLASS)) {
+            originalName.replace(EXTENSION_NAME_CLASS, EXTENSION_NAME_JAVA)
         } else originalName
 
     // Standalone decompiler jar is deprecated.
     private fun createCommandLine(basePath: String, javaExePath: String, targetPath: String): GeneralCommandLine? {
         val decompilerPath = PropertiesComponent.getInstance()
-                .getValue(DecompilerConfigurable.KEY_DECOMPILER_PATH)
+            .getValue(DecompilerConfigurable.KEY_DECOMPILER_PATH)
         return if (decompilerPath == null) {
             null
         } else GeneralCommandLine(listOf(javaExePath, "-jar", decompilerPath, targetPath)).apply {
@@ -179,13 +188,15 @@ class DecompilerAction : AnAction() {
     }
 
     private val ProjectJdkImpl.javaExecPath: String?
-            get() = if (homePath?.isNotEmpty() == true) { "$homePath/bin/java" } else null
+        get() = if (homePath?.isNotEmpty() == true) {
+            "$homePath/bin/java"
+        } else null
 
     private fun getVirtualClassFile(currentDoc: Document, project: Project): VirtualFile? {
         val currentSrc = FileDocumentManager.getInstance().getFile(currentDoc)
         currentSrc?.let { srcFile ->
-            val currentClassFileName = sourceRegex.replace(srcFile.name, EXTENTION_NAME_CLASS)
-            if (!currentClassFileName.endsWith(EXTENTION_NAME_CLASS)) {
+            val currentClassFileName = sourceRegex.replace(srcFile.name, EXTENSION_NAME_CLASS)
+            if (!currentClassFileName.endsWith(EXTENSION_NAME_CLASS)) {
                 return@let
             }
 
@@ -196,7 +207,7 @@ class DecompilerAction : AnAction() {
     }
 
     private fun getVirtualClassFile(selectedText: String, project: Project): VirtualFile? =
-        findVirtualFile(selectedText + EXTENTION_NAME_CLASS, project)
+        findVirtualFile(selectedText + EXTENSION_NAME_CLASS, project)
 
     private fun findVirtualFile(classFileName: String, project: Project): VirtualFile? {
         if (project.name != currentProjectName) {
@@ -207,8 +218,8 @@ class DecompilerAction : AnAction() {
         if (possibleClassRoots.isEmpty()) {
             possibleClassRoots = project.basePath?.let { basePath ->
                 File(basePath).walkTopDown()
-                        .filter { file -> file.isDirectory && (file.name == "build" || file.name == "out") }
-                        .toList()
+                    .filter { file -> file.isDirectory && (file.name == "build" || file.name == "out") }
+                    .toList()
             } ?: EMPTY_FILE_LIST
         }
 
@@ -241,8 +252,8 @@ class DecompilerAction : AnAction() {
     }
 
     companion object {
-        private const val EXTENTION_NAME_CLASS = ".class"
-        private const val EXTENTION_NAME_JAVA = ".java"
+        private const val EXTENSION_NAME_CLASS = ".class"
+        private const val EXTENSION_NAME_JAVA = ".java"
         private val EMPTY_FILE_LIST = emptyList<File>()
     }
 }

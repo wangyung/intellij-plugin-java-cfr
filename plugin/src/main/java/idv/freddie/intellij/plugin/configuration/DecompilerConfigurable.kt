@@ -1,4 +1,4 @@
-package idv.freddie.intellij.plugin
+package idv.freddie.intellij.plugin.configuration
 
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.options.Configurable

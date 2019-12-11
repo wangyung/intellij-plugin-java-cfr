@@ -1,4 +1,4 @@
-package idv.freddie.intellij.plugin
+package idv.freddie.intellij.plugin.configuration
 
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.ui.TextBrowseFolderListener
@@ -8,6 +8,7 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.vfs.VirtualFile
+import idv.freddie.intellij.plugin.DecompilerConfigurationView
 import javax.swing.JLabel
 
 class DecompilerConfigurableModel {
