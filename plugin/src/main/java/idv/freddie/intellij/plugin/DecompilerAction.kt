@@ -22,7 +22,6 @@ import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.wm.WindowManager
 import idv.freddie.intellij.plugin.configuration.DecompilerConfigurable
 import org.benf.cfr.reader.api.CfrDriver
 import java.io.File
@@ -36,8 +35,6 @@ class DecompilerAction : AnAction() {
     private val sourceRegex = Regex("\\.(kt|java)\$", RegexOption.IGNORE_CASE)
 
     private var possibleClassRoots: List<File> = EMPTY_FILE_LIST
-
-    private val windowManager: WindowManager = WindowManager.getInstance()
 
     private var currentProjectName: String = ""
 
@@ -62,13 +59,13 @@ class DecompilerAction : AnAction() {
 
         val basePath = project.basePath
         if (basePath == null || javaExePath.isNullOrEmpty()) {
-            outputError(Messages.INCORRECT_JAVA_PATH, project)
+            outputError(Messages.INCORRECT_JAVA_PATH)
             return
         }
 
         val classFilePath = targetClassFile?.path
         if (classFilePath.isNullOrEmpty()) {
-            outputError(Messages.NO_CLASS_FILE, project)
+            outputError(Messages.NO_CLASS_FILE)
             return
         }
 
@@ -78,6 +75,10 @@ class DecompilerAction : AnAction() {
 
         makeSureDirectoryExist(decompileOutputDirectory)
 
+        decompileClassFile(project, classFilePath, outputFilePath)
+    }
+
+    private fun decompileClassFile(project: Project, classFilePath: String, outputFilePath: String) {
         // TODO: Remove the stdout redirection after options is supported.
         val prevPrintStream = System.out
         val outputFile = File(outputFilePath)
@@ -92,21 +93,19 @@ class DecompilerAction : AnAction() {
             ApplicationManager.getApplication().invokeLater {
                 FileEditorManager.getInstance(project).openFile(it, true)
             }
-        } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR, project) }
+        } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR) }
     }
 
-    private fun outputError(message: String, project: Project) {
-        val statusBar = windowManager.getStatusBar(project)
+    private fun outputError(message: String) {
         Notifications.Bus.notify(
             Notification(
                 "CFRDecompiler",
-                "error",
+                "warning",
                 "[Decompiler] $message",
-                NotificationType.ERROR
+                NotificationType.WARNING
             )
         )
         logger.warn(message)
-        statusBar.info = Messages.UNKNOWN_ERROR
     }
 
     private fun getJavaExePath(project: Project): String? {
@@ -130,14 +129,18 @@ class DecompilerAction : AnAction() {
         val currentDoc = editor?.document
         val project = actionEvent.project
 
-        actionEvent.presentation.isEnabledAndVisible =
-            project != null
-                    && currentDoc != null
-        // && isShowAction(project, editor, currentDoc)
+        actionEvent.presentation.isVisible =
+            project != null && currentDoc != null
+
+        actionEvent.presentation.isEnabled = isShowAction(project, editor, currentDoc)
     }
 
     // Don't need to use this method to determine isEnabledAndVisible
-    private fun isShowAction(project: Project, editor: Editor, currentDoc: Document): Boolean {
+    private fun isShowAction(project: Project?, editor: Editor?, currentDoc: Document?): Boolean {
+        if (project == null || editor == null || currentDoc == null) {
+            return false
+        }
+
         return getVirtualClassFile(currentDoc, project) != null
                 || (!editor.selectionModel.selectedText.isNullOrEmpty()
                 && getVirtualClassFile(editor.selectionModel.selectedText!!, project) != null)
@@ -183,7 +186,7 @@ class DecompilerAction : AnAction() {
                 ApplicationManager.getApplication().invokeLater {
                     FileEditorManager.getInstance(project).openFile(it, true)
                 }
-            } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR, project) }
+            } ?: run { outputError(Messages.CANT_LAUNCH_FILE_EDITOR) }
         }
     }
 

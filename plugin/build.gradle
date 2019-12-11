@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.61"
 }
 
+ext.kotlinVersion = "1.3.61"
+
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: "kotlin"
 
@@ -17,6 +19,7 @@ intellij {
 
 dependencies {
     implementation project(':cfr-decompiler')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 }
 
 repositories {
