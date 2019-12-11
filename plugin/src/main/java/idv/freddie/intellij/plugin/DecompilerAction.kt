@@ -23,6 +23,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import idv.freddie.intellij.plugin.configuration.DecompilerConfigurable
+import kotlinx.coroutines.*
 import org.benf.cfr.reader.api.CfrDriver
 import java.io.File
 import java.io.FileOutputStream
@@ -39,6 +40,9 @@ class DecompilerAction : AnAction() {
     private var currentProjectName: String = ""
 
     private val logger: Logger = Logger.getInstance("CFRDecompiler")
+
+    private val job: Job = SupervisorJob()
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + job)
 
     override fun actionPerformed(actionEvent: AnActionEvent) {
         val editor = actionEvent.getData(LangDataKeys.EDITOR)
@@ -69,13 +73,16 @@ class DecompilerAction : AnAction() {
             return
         }
 
-        val decompileOutputDirectory = getDecompilePath(basePath)
-        val decompileFileName = createDecompiledFileName(targetClassFile?.name ?: "")
-        val outputFilePath = "$decompileOutputDirectory/$decompileFileName"
+        coroutineScope.launch {
+            val decompileOutputDirectory = getDecompilePath(basePath)
+            val decompileFileName = createDecompiledFileName(targetClassFile?.name ?: "")
+            val outputFilePath = "$decompileOutputDirectory/$decompileFileName"
 
-        makeSureDirectoryExist(decompileOutputDirectory)
+            makeSureDirectoryExist(decompileOutputDirectory)
 
-        decompileClassFile(project, classFilePath, outputFilePath)
+            decompileClassFile(project, classFilePath, outputFilePath)
+        }
+        logger.debug("decompile job is completed ${job.isCompleted}")
     }
 
     private fun decompileClassFile(project: Project, classFilePath: String, outputFilePath: String) {
