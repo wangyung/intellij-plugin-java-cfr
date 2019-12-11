@@ -1,17 +1,27 @@
 <idea-plugin>
   <id>idv.freddie.plugin.decompiler</id>
-  <name>CFRDecompiler</name>
+  <name>Kotlin to Java decompiler</name>
   <version>0.5.0</version>
   <vendor email="wangyung@gamil.com" url="https://twitter.com/wangyung">Freddie Wang</vendor>
 
   <description><![CDATA[
-      Enter short description for your plugin here.<br>
-      <em>most HTML tags may be used</em>
-    ]]></description>
+      A helper plugin to support decompiler Kotlin bytecode to Java. <br>
+      It is based on <a href="https://www.benf.org/other/cfr/">CFR Decompiler</a>
+      which doesn't have problems to decompile the bytecode with Kotlin Coroutines.<br>
+      <h3>How to use</h3>
+      <ol>
+        <li>Build the project first</li>
+        <li>Open the kotlin file in the editor</li>
+        <li>Run the action from Code -> Decompile Kotlin to Java </li>
+      </ol>
+
+      This plugin is open source. You can find the source code on
+      <a href="https://github.com/wangyung/intellij-plugin-java-cfr">github</a>
+    ]]>
+  </description>
 
   <change-notes><![CDATA[
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>
+      2019/12/09 - First version.<br>
     ]]>
   </change-notes>
 
@@ -24,13 +34,14 @@
   <depends>com.intellij.modules.lang</depends>
   -->
 
-  <extensions defaultExtensionNs="com.intellij">
-    <applicationConfigurable instance="idv.freddie.intellij.plugin.DecompilerConfigurable"/>
-  </extensions>
+<!--  <extensions defaultExtensionNs="com.intellij">-->
+<!--    <applicationConfigurable instance="idv.freddie.intellij.plugin.DecompilerConfigurable"/>-->
+<!--  </extensions>-->
 
   <actions>
-    <action class="idv.freddie.intellij.plugin.DecompilerAction" id="freddie.cfr.decompile" text="Decompile class" description="Decompile the class file to java">
+    <action class="idv.freddie.intellij.plugin.DecompilerAction" id="freddie.cfr.decompile" text="Decompile Kotlin to Java" description="Decompile the class file to java">
       <add-to-group group-id="CodeMenu" relative-to-action="ConvertJavaFileToKotlin" anchor="after"/>
+      <keyboard-shortcut first-keystroke="ctrl alt shift D" keymap="$default"/>
     </action>
   </actions>
 

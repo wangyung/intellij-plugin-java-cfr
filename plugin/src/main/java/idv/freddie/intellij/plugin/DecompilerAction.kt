@@ -65,8 +65,8 @@ class DecompilerAction : AnAction() {
             return
         }
 
-        val classFilePath = targetClassFile?.path ?: ""
-        if (classFilePath.isEmpty()) {
+        val classFilePath = targetClassFile?.path
+        if (classFilePath.isNullOrEmpty()) {
             outputError(Messages.NO_CLASS_FILE, project)
             return
         }
