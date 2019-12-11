@@ -15,7 +15,8 @@
         <li>Run the action from Code -> Decompile Kotlin to Java </li>
       </ol>
 
-      Default shortcut: CMD + OPTION + SHIFT + D
+      Default shortcut: CMD + OPTION + SHIFT + D<br>
+      <br>
 
       This plugin is open source. You can find the source code on
       <a href="https://github.com/wangyung/intellij-plugin-java-cfr">github</a>
