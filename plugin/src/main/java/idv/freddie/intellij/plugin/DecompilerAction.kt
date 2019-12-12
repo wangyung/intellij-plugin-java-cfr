@@ -8,7 +8,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataKeys
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
@@ -48,7 +47,7 @@ class DecompilerAction : AnAction() {
     override fun actionPerformed(actionEvent: AnActionEvent) {
         val editor = actionEvent.getData(LangDataKeys.EDITOR)
         val currentDoc = editor?.document
-        val project = actionEvent.dataContext.getData(DataKeys.PROJECT.name) as? Project
+        val project = actionEvent.dataContext.getData(LangDataKeys.PROJECT.name) as? Project
         if (currentDoc == null || project == null) {
             logger.error(Messages.NO_DOCUMENT_OR_PROJECT)
             return

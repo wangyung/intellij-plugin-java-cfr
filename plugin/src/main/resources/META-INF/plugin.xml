@@ -4,6 +4,9 @@
   <version>0.5.0</version>
   <vendor email="wangyung@gamil.com" url="https://twitter.com/wangyung">Freddie Wang</vendor>
 
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.java</depends>
+
   <description><![CDATA[
       A helper plugin to support decompiler Kotlin bytecode to Java. <br>
       It is based on <a href="https://www.benf.org/other/cfr/">CFR Decompiler</a>
@@ -29,7 +32,7 @@
   </change-notes>
 
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="162.0"/>
+  <idea-version since-build="191.0"/>
 
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->

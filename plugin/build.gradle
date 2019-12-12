@@ -16,8 +16,9 @@ version '0.5.0'
 archivesBaseName = "cfr-decompiler-plugin"
 
 intellij {
-    version '2018.1.6'
-    pluginName 'CFRDecompiler'
+    version 'IC-192.7142.36'
+    pluginName 'cfr-decompiler-plugin'
+    plugins 'java'
     updateSinceUntilBuild false
 }
 
@@ -25,12 +26,6 @@ dependencies {
     implementation project(':cfr-decompiler')
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
-}
-
-jar {
-    from project(":cfr-decompiler").sourceSets.main.output.asFileTree.matching {
-        include "**/*.class"
-    }
 }
 
 repositories {
