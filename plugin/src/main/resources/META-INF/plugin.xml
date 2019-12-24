@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>idv.freddie.plugin.decompiler</id>
   <name>Kotlin to Java decompiler</name>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
   <vendor email="wangyung@gamil.com" url="https://twitter.com/wangyung">Freddie Wang</vendor>
 
   <depends>com.intellij.modules.platform</depends>

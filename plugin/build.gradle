@@ -12,7 +12,7 @@ apply plugin: 'org.jetbrains.intellij'
 apply plugin: "kotlin"
 
 group 'idv.freddie.plugin'
-version '0.5.0'
+version VERSION
 archivesBaseName = "cfr-decompiler-plugin"
 
 intellij {
