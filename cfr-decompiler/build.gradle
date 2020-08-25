@@ -5,7 +5,28 @@ sourceCompatibility = JavaVersion.VERSION_1_6
 sourceSets {
     main {
         java {
-            srcDirs = ['cfr/src']
+            srcDirs = ["cfr/src", "cfr/target/generated-sources/java-templates"]
+        }
+    }
+}
+
+task findMaven {
+    doFirst {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine "/usr/bin/which", "mvn"
+            standardOutput = stdout
+        }
+        this.ext.mvn = stdout.toString().trim()
+    }
+}
+
+task generateTemplateFiles {
+    dependsOn findMaven
+    doLast {
+        exec {
+            workingDir "cfr/"
+            commandLine this.ext.mvn, "templating:filter-sources"
         }
     }
 }

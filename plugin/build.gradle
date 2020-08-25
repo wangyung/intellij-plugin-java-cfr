@@ -32,3 +32,4 @@ repositories {
     mavenCentral()
 }
 
+tasks.getByName("compileJava").dependsOn(":cfr-decompiler:generateTemplateFiles")
