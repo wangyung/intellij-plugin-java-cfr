@@ -1,14 +1,16 @@
 plugins {
-    id("org.jetbrains.intellij") version "0.4.14"
-    id("org.jetbrains.kotlin.jvm") version "1.3.61"
+    id("org.jetbrains.intellij") version "0.6.5"
+    id("org.jetbrains.kotlin.jvm") version "1.4.21"
 }
 
 ext {
-    kotlinVersion = "1.3.61"
-    coroutineVersion = "1.3.2"
+    kotlinVersion = "1.4.21"
+    coroutineVersion = "1.3.9"
+    cfrVersion = "0.150"
+    useLocalIDE = true
 }
 
-apply plugin: 'org.jetbrains.intellij'
+apply plugin: "org.jetbrains.intellij"
 apply plugin: "kotlin"
 
 group 'idv.freddie.plugin'
@@ -16,14 +18,23 @@ version VERSION
 archivesBaseName = "cfr-decompiler-plugin"
 
 intellij {
-    version 'IC-192.7142.36'
-    pluginName 'cfr-decompiler-plugin'
-    plugins 'java'
+    version "202.7319.50"
+    type "IC"
+    pluginName "cfr-decompiler-plugin"
+    plugins "java", "android"
     updateSinceUntilBuild false
 }
 
+runIde {
+    if (useLocalIDE) {
+        def props = loadProperties("$rootDir/local.properties")
+        def localDirectory = props.get("local.ide.path")
+        ideDirectory localDirectory
+    }
+}
+
 dependencies {
-    implementation project(':cfr-decompiler')
+    implementation "org.benf:cfr:$cfrVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
 }
@@ -32,4 +43,12 @@ repositories {
     mavenCentral()
 }
 
-tasks.getByName("compileJava").dependsOn(":cfr-decompiler:generateTemplateFiles")
+def loadProperties(filename) {
+    def propertiesFile = file(filename)
+    if (!propertiesFile.exists()) {
+        throw new IllegalArgumentException("Can't find the property file from $filename.")
+    }
+    Properties props = new Properties()
+    props.load(new FileInputStream(propertiesFile))
+    return props
+}
