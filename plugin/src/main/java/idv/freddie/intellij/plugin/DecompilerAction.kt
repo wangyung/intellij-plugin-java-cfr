@@ -40,10 +40,6 @@ class DecompilerAction : AnAction() {
 
     private val logger: Logger = Logger.getInstance("CFRDecompiler")
 
-    private var parentJob: Job = SupervisorJob()
-    private var childJob: Job? = null
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + parentJob)
-
     override fun actionPerformed(actionEvent: AnActionEvent) {
         val editor = actionEvent.getData(LangDataKeys.EDITOR)
         val currentDoc = editor?.document
@@ -73,20 +69,13 @@ class DecompilerAction : AnAction() {
             return
         }
 
-        if (childJob != null && childJob?.isCompleted == false) {
-            logger.warn("decompile job is still running!")
-            return
-        }
+        val decompileOutputDirectory = getDecompilePath(basePath)
+        val decompileFileName = createDecompiledFileName(targetClassFile?.name ?: "")
+        val outputFilePath = "$decompileOutputDirectory/$decompileFileName"
 
-        childJob = coroutineScope.launch {
-            val decompileOutputDirectory = getDecompilePath(basePath)
-            val decompileFileName = createDecompiledFileName(targetClassFile?.name ?: "")
-            val outputFilePath = "$decompileOutputDirectory/$decompileFileName"
+        makeSureDirectoryExist(decompileOutputDirectory)
 
-            makeSureDirectoryExist(decompileOutputDirectory)
-
-            decompileClassFile(project, classFilePath, outputFilePath)
-        }
+        decompileClassFile(project, classFilePath, outputFilePath)
     }
 
     private fun decompileClassFile(project: Project, classFilePath: String, outputFilePath: String) {
