@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>idv.freddie.plugin.decompiler</id>
   <name>Kotlin to Java decompiler</name>
-  <version>0.5.1</version>
+  <version>0.7.0</version>
   <vendor email="wangyung@gamil.com" url="https://twitter.com/wangyung">Freddie Wang</vendor>
 
   <depends>com.intellij.modules.platform</depends>
@@ -11,6 +11,8 @@
       A helper plugin to support decompiler Kotlin bytecode to Java. <br>
       It is based on <a href="https://www.benf.org/other/cfr/">CFR Decompiler</a>
       which doesn't have problems to decompile the bytecode with Kotlin Coroutines.<br>
+      It can be also used for checking the result of Jetpack Compose.<br>
+      <br>
       <h3>How to use</h3>
       <ol>
         <li>Build the project first</li>
@@ -27,8 +29,10 @@
   </description>
 
   <change-notes><![CDATA[
-      2019/12/09 - First version.<br>
-      2020/08/25 - Update CFR to 151<br>
+      2019/12/09 (0.5) - First version.<br>
+      2020/08/25 (0.6) - Update CFR to 151<br>
+      2020/12/26 (0.7) - Fixed a issue that plugin may not work in some IDE versions.
+
     ]]>
   </change-notes>
 
